@@ -2,7 +2,6 @@
 node_modules/
 pnp.*.cjs
 .pnp*
-pnpm-lock.yaml
 
 # Build outputs
 dist/
