@@ -1,0 +1,25 @@
+# Node/pnpm artifacts
+node_modules/
+pnp.*.cjs
+.pnp*
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Editor/OS
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temp
+tmp/
