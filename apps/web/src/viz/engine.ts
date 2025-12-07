@@ -65,12 +65,25 @@ export const applyEvent = (state: ViewState, event: VizEvent): void => {
       }
       return;
     }
-    case 'Compare':
-    case 'Swap':
-    case 'Rotate':
-    case 'Rebalance':
-      // keep no-op; could add meta markers later
+    case 'Compare': {
+      state.meta.currentTip = `Compare ${event.a} vs ${event.b}`;
       return;
+    }
+    case 'Swap': {
+      const a = state.nodes.get(event.a);
+      const b = state.nodes.get(event.b);
+      if (a && b) {
+        state.nodes.set(event.a, { ...b, id: event.a });
+        state.nodes.set(event.b, { ...a, id: event.b });
+      }
+      state.meta.currentTip = `Swap ${event.a} <-> ${event.b}`;
+      return;
+    }
+    case 'Rotate':
+    case 'Rebalance': {
+      state.meta.currentTip = event.type;
+      return;
+    }
     case 'Tip': {
       state.meta.currentTip = event.text;
       state.meta.selection = event.anchor ?? state.meta.selection ?? null;

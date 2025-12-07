@@ -1,6 +1,11 @@
 import { demoOperations, demoStep } from './demoData';
+import { DemoCanvas } from './viz/DemoCanvas';
+import { renderLinkedListDemo, renderTreeDemo } from './viz/demo';
 
 export default function App() {
+  const listView = renderLinkedListDemo();
+  const treeView = renderTreeDemo();
+
   return (
     <main className="app">
       <header className="app__header">
@@ -43,6 +48,16 @@ export default function App() {
           <span className="pill">{demoStep.snapshot.edges.length} edges</span>
           <span className="pill">selection: {demoStep.snapshot.meta?.selection}</span>
         </div>
+      </section>
+
+      <section className="card">
+        <h2>Renderer Demo (Linked List)</h2>
+        <DemoCanvas state={listView} />
+      </section>
+
+      <section className="card">
+        <h2>Renderer Demo (Tree)</h2>
+        <DemoCanvas state={treeView} />
       </section>
     </main>
   );

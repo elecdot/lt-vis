@@ -45,4 +45,18 @@ describe('viz engine', () => {
     expect(renderer.getState().nodes.has('x')).toBe(true);
     expect(renderer.getState().meta.currentTip).toBe('done');
   });
+
+  it('handles compare/swap/rotate/rebalance safely', () => {
+    const state = createEmptyViewState();
+    applyEvent(state, { type: 'CreateNode', node: { id: 'a' } });
+    applyEvent(state, { type: 'CreateNode', node: { id: 'b' } });
+    applyEvent(state, { type: 'Compare', a: 'a', b: 'b' });
+    expect(state.meta.currentTip).toContain('Compare');
+    applyEvent(state, { type: 'Swap', a: 'a', b: 'b' });
+    expect(state.nodes.has('a')).toBe(true);
+    expect(state.nodes.has('b')).toBe(true);
+    applyEvent(state, { type: 'Rotate', kind: 'LL', pivot: 'a' });
+    applyEvent(state, { type: 'Rebalance' });
+    expect(state.meta.currentTip).toBe('Rebalance');
+  });
 });
