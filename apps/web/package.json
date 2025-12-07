@@ -2,20 +2,28 @@
   "name": "@ltvis/web",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "LT-Vis web app (stub scaffold)",
   "scripts": {
-    "dev": "echo \"stub: web dev\"",
-    "build": "tsc -p ../tsconfig.json --noEmit || true",
-    "typecheck": "tsc -p ../tsconfig.json --noEmit || true",
-    "test": "vitest run --passWithNoTests",
-    "lint": "tsc -p ../tsconfig.json --noEmit || true"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@ltvis/model-ts": "workspace:*",
     "@ltvis/shared": "workspace:*",
-    "@ltvis/model-ts": "workspace:*"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.8",
+    "vitest": "^1.6.1"
   }
 }
