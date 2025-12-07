@@ -4,6 +4,7 @@ import { tipEvent, targetId, Value } from '../core/helpers';
 export type TreeNode = {
   id: ID;
   value: Value;
+  label?: string;
   left?: TreeNode | null;
   right?: TreeNode | null;
 };
@@ -19,10 +20,13 @@ export const snapshotFromRoot = (structureId: ID, root: TreeNode | null): StateS
   while (stack.length) {
     const node = stack.pop();
     if (!node) continue;
+    const weight = node.value;
+    const charLabel = node.label;
     nodes.push({
       id: node.id,
-      label: String(node.value),
-      value: node.value
+      label: charLabel ?? String(weight),
+      value: weight,
+      props: { weight, ...(charLabel ? { char: charLabel } : {}) }
     });
     if (node.left) {
       edges.push({ id: edgeId(node.id, node.left.id, 'L'), src: node.id, dst: node.left.id, label: 'L' });
@@ -41,7 +45,14 @@ export const restoreTreeFromSnapshot = (structureId: ID, snapshot: StateSnapshot
   if (snapshot.nodes.length === 0) return null;
   const nodes = new Map<ID, TreeNode>();
   snapshot.nodes.forEach((n) => {
-    nodes.set(n.id, { id: n.id, value: (n.value ?? n.label) as Value, left: null, right: null });
+    const weight =
+      typeof n.value === 'number'
+        ? n.value
+        : typeof (n.props as any)?.weight === 'number'
+        ? (n.props as any).weight
+        : (n.label as Value);
+    const label = (n.props as any)?.char ?? (typeof n.value === 'string' ? n.value : n.label);
+    nodes.set(n.id, { id: n.id, value: weight as Value, label, left: null, right: null });
   });
   const incoming = new Map<ID, ID>();
   snapshot.edges.forEach((edge) => {

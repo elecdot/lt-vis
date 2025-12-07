@@ -4,8 +4,9 @@ import { SeqList } from './list/SeqList';
 import { Stack } from './list/Stack';
 import { BinaryTree } from './tree/BinaryTree';
 import { BST } from './tree/BST';
+import { HuffmanTree } from './tree/HuffmanTree';
 
-export { SeqList, LinkedList, Stack, BinaryTree, BST };
+export { SeqList, LinkedList, Stack, BinaryTree, BST, HuffmanTree };
 
 export function createStructure(kind: StructureKind, id: ID, initial?: Array<string | number>): Structure {
   switch (kind) {
@@ -19,9 +20,11 @@ export function createStructure(kind: StructureKind, id: ID, initial?: Array<str
       return new BinaryTree(id, initial);
     case 'BST':
       return new BST(id, initial);
+    case 'Huffman':
+      return new HuffmanTree(id);
     default:
       throw new Error(`createStructure: unsupported kind ${kind}`);
   }
 }
 
-// Placeholder for Huffman to be added next
+// Huffman tree implemented above; DSL/persistence wiring to follow in later phases
