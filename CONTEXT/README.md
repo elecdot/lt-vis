@@ -20,7 +20,7 @@ Minimal map of the most important entry points:
   terminology, core scenarios.
 - [`CONTEXT/domain/design.md`](./domain/design.md) — architecture, shared
   contracts, flows.
-- [`CONTEXT/domain/roadmap/`](./domain/r.admap/) — roadmap and phase
+- [`CONTEXT/domain/roadmap/`](./domain/roadmap/) — roadmap and phase
   breakdown.
 - [`CONTEXT/agent/`](./agent/) — agent prompts, strategies, dependency
   legend, and future playbooks.

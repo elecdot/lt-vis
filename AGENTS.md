@@ -350,6 +350,7 @@ Each agent must consult this workflow before starting work on a feature or fix.
 |---|---|---|---|---|
 | doc-robot | LT-Vis Doc Robot | Repo snapshots, agent & dev docs | `CONTEXT/`, `tmp/`, `CONTEXT/agent/` | `CONTEXT/agent/experts/doc-robot.md` |
 | dev-debugger | Agent Dev Debug Copilot | Analyzes and debugs other agents | Read-only analysis, proposes prompts | `CONTEXT/agent/experts/dev-debugger.md` |
+| code-copilot | LT-Vis Coding Copilot | Roadmap-aligned coding & tests | `packages/`, `apps/web/`, `examples/`, `CONTEXT/domain/` | `CONTEXT/agent/experts/code-copilot.md` |
 
 Add new rows when new agents are introduced; keep this table in sync with
 the `experts/` directory.
@@ -367,3 +368,5 @@ Chronological list of significant changes to agents or workflows.
   - Registered `doc-robot` in Agents Catalog.
 - **2025-11-30** — Added `dev-debugger` agent to catalog and created its
   expert prompt.
+- **2025-12-07** — Added `code-copilot` agent (coding aligned to roadmap) and
+  registered its expert prompt.
