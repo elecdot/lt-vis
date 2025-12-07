@@ -1,4 +1,4 @@
-import type { OpStep, Operation, VizEvent } from '@ltvis/shared';
+import type { ID, OpStep, Operation, VizEvent } from '@ltvis/shared';
 import { tipEvent, Value } from '../core/helpers';
 import { TreeBase } from './TreeBase';
 import {
@@ -8,6 +8,8 @@ import {
   snapshotFromRoot,
   TreeNode
 } from './helpers';
+
+type Order = 'preorder' | 'inorder' | 'postorder' | 'levelorder';
 
 export class BST extends TreeBase {
   public kind = 'BST' as const;
@@ -20,7 +22,7 @@ export class BST extends TreeBase {
     }
   }
 
-  protected handleOperation(op: Operation): OpStep | null {
+  protected handleOperation(op: Operation): OpStep | OpStep[] | null {
     if (op.kind === 'Create') {
       this.reset();
       if (op.payload && !Array.isArray(op.payload)) {
@@ -42,6 +44,9 @@ export class BST extends TreeBase {
     if (op.kind === 'Delete') {
       if (op.key === undefined) return this.errorStep('invalid_key', 'Delete requires a key');
       return this.deleteValue(op.key);
+    }
+    if (op.kind === 'Traverse') {
+      return this.traverse(op.order as Order);
     }
     return this.errorStep('unsupported_op', `${this.kind} does not handle ${op.kind}`);
   }
@@ -84,19 +89,24 @@ export class BST extends TreeBase {
     return { explain: `Insert ${value}`, events, snapshot };
   }
 
-  private findValue(key: Value): OpStep {
+  private findValue(key: Value): OpStep | OpStep[] {
     let current = this.root;
-    const events: VizEvent[] = [];
+    const steps: OpStep[] = [];
     while (current) {
-      events.push({ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' });
+      const snapshot = this.snapshot();
+      const events: VizEvent[] = [
+        { type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' }
+      ];
       if (key === current.value) {
-        const snapshot = this.snapshot();
         events.push(tipEvent(`Found ${key}`, current.id));
-        return { explain: `Find ${key}`, events, snapshot };
+        steps.push({ explain: `Find ${key}`, events, snapshot: { ...snapshot, meta: { ...(snapshot.meta ?? {}), selection: current.id } } });
+        return steps;
       }
+      steps.push({ explain: `Traverse for ${key}`, events, snapshot: { ...snapshot, meta: { ...(snapshot.meta ?? {}), selection: current.id } } });
       current = key < current.value ? current.left ?? null : current.right ?? null;
     }
-    return notFoundStep(key, this.snapshot());
+    steps.push(notFoundStep(key, this.snapshot()));
+    return steps;
   }
 
   private deleteValue(key: Value): OpStep {
@@ -153,4 +163,39 @@ export class BST extends TreeBase {
     const snapshot = this.snapshot();
     return { explain: `Delete ${key}`, events, snapshot };
   }
+
+  private traverse(order: Order): OpStep[] | OpStep {
+    if (!this.root) return this.errorStep('empty_tree', 'Cannot traverse empty BST');
+    const visited = traverse(this.root, order);
+    if (visited.length === 0) return this.errorStep('empty_traversal', 'Traversal produced no steps');
+    return visited.map((nodeId) => {
+      const snapshot = this.snapshot();
+      return highlightStep(nodeId, `Visit ${nodeId}`, snapshot);
+    });
+  }
 }
+
+const traverse = (root: TreeNode, order: Order): ID[] => {
+  const result: ID[] = [];
+  const visit = (node: TreeNode | null) => {
+    if (!node) return;
+    if (order === 'preorder') result.push(node.id);
+    visit(node.left ?? null);
+    if (order === 'inorder') result.push(node.id);
+    visit(node.right ?? null);
+    if (order === 'postorder') result.push(node.id);
+  };
+  if (order === 'levelorder') {
+    const queue: Array<TreeNode | null> = [root];
+    while (queue.length) {
+      const node = queue.shift();
+      if (!node) continue;
+      result.push(node.id);
+      if (node.left) queue.push(node.left);
+      if (node.right) queue.push(node.right);
+    }
+    return result;
+  }
+  visit(root);
+  return result;
+};

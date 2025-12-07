@@ -1,6 +1,13 @@
 import type { ID, OpStep, Operation, StateSnapshot, Structure, StructureKind, VizEvent } from '@ltvis/shared';
 import { eventsForSnapshot, isValueArray, tipEvent } from '../core/helpers';
-import { buildFromLevelOrder, restoreTreeFromSnapshot, snapshotFromRoot, TreeNode, wrongTargetStep } from './helpers';
+import {
+  buildFromLevelOrder,
+  restoreTreeFromSnapshot,
+  snapshotFromForest,
+  snapshotFromRoot,
+  TreeNode,
+  wrongTargetStep
+} from './helpers';
 
 export abstract class TreeBase implements Structure {
   public abstract kind: StructureKind;
@@ -24,15 +31,21 @@ export abstract class TreeBase implements Structure {
     this.root = snapshot.nodes.length === 0 ? null : restoreTreeFromSnapshot(this.id, snapshot);
   }
 
-  protected abstract handleOperation(op: Operation): OpStep | null;
+  protected abstract handleOperation(op: Operation): OpStep | OpStep[] | null;
 
   *apply(op: Operation): Iterable<OpStep> {
     if ((op.kind === 'Create' ? op.id : op.target) !== this.id) {
       yield wrongTargetStep(op, this.id, this.snapshot());
       return;
     }
-    const step = this.handleOperation(op);
-    if (step) yield step;
+    const result = this.handleOperation(op);
+    if (Array.isArray(result)) {
+      for (const step of result) {
+        yield step;
+      }
+    } else if (result) {
+      yield result;
+    }
   }
 
   protected createFromPayload(op: Operation): OpStep | null {

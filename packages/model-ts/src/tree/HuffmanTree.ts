@@ -1,7 +1,7 @@
 import type { OpStep, Operation, VizEvent } from '@ltvis/shared';
 import { tipEvent, Value } from '../core/helpers';
 import { TreeBase } from './TreeBase';
-import { edgeId, snapshotFromRoot, TreeNode } from './helpers';
+import { edgeId, snapshotFromForest, snapshotFromRoot, TreeNode } from './helpers';
 
 type WeightMap = Record<string, number>;
 
@@ -13,7 +13,7 @@ export class HuffmanTree extends TreeBase {
     super(id, null);
   }
 
-  protected handleOperation(op: Operation): OpStep | null {
+  protected handleOperation(op: Operation): OpStep | OpStep[] | null {
     if (op.kind === 'BuildHuffman') {
       return this.build(op.weights);
     }
@@ -38,35 +38,50 @@ export class HuffmanTree extends TreeBase {
     return node;
   }
 
-  private build(weights: WeightMap): OpStep {
+  private build(weights: WeightMap): OpStep[] {
     const entries = Object.entries(weights);
     if (entries.length === 0) {
       this.reset();
-      return this.errorStep('invalid_payload', 'Weights map is empty');
+      return [this.errorStep('invalid_payload', 'Weights map is empty')];
     }
 
     let forest: TreeNode[] = entries.map(([char, weight]) => this.leaf(char, weight));
-    const events: VizEvent[] = [];
+    const steps: OpStep[] = [];
+    steps.push({
+      explain: 'Init Huffman leaves',
+      events: forest.map((node) => ({ type: 'CreateNode', node })),
+      snapshot: snapshotFromForest(forest)
+    });
 
     while (forest.length > 1) {
       forest.sort((a, b) => (a.value as number) - (b.value as number));
       const left = forest.shift()!;
       const right = forest.shift()!;
       const parent = this.internal(left, right);
-      events.push(
-        { type: 'Link', edge: { id: edgeId(parent.id, left.id, 'L'), src: parent.id, dst: left.id, label: 'L' } },
-        { type: 'Link', edge: { id: edgeId(parent.id, right.id, 'R'), src: parent.id, dst: right.id, label: 'R' } },
-        tipEvent(`Merge ${left.label ?? left.id} (${left.value}) + ${right.label ?? right.id} (${right.value})`)
-      );
       forest.push(parent);
+      const snapshot = snapshotFromForest(forest);
+      steps.push({
+        explain: 'Merge step',
+        events: [
+          { type: 'CreateNode', node: snapshot.nodes.find((n) => n.id === parent.id) ?? { id: parent.id, value: parent.value } as any },
+          { type: 'Link', edge: { id: edgeId(parent.id, left.id, 'L'), src: parent.id, dst: left.id, label: 'L' } },
+          { type: 'Link', edge: { id: edgeId(parent.id, right.id, 'R'), src: parent.id, dst: right.id, label: 'R' } },
+          tipEvent(`Merge ${left.label ?? left.id} (${left.value}) + ${right.label ?? right.id} (${right.value})`, parent.id)
+        ],
+        snapshot
+      });
     }
 
     this.root = forest[0] ?? null;
     const snapshot = this.snapshot();
-    return {
-      explain: 'Build Huffman tree',
-      events: [...events, tipEvent('Huffman tree built')],
+    steps.push({
+      explain: 'Huffman tree built',
+      events: [
+        ...snapshot.edges.map((edge) => ({ type: 'Link', edge } as VizEvent)),
+        tipEvent('Huffman tree built', snapshot.meta?.selection ?? undefined)
+      ],
       snapshot
-    };
+    });
+    return steps;
   }
 }

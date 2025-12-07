@@ -11,11 +11,11 @@ export type TreeNode = {
 
 export const edgeId = (src: ID, dst: ID, label: 'L' | 'R') => `${src}->${dst}:${label}`;
 
-export const snapshotFromRoot = (structureId: ID, root: TreeNode | null): StateSnapshot => {
-  if (!root) return { nodes: [], edges: [], meta: { selection: undefined } };
+export const snapshotFromForest = (forest: Array<TreeNode | null>): StateSnapshot => {
+  if (forest.every((f) => !f)) return { nodes: [], edges: [], meta: { selection: undefined } };
   const nodes: StateSnapshot['nodes'] = [];
   const edges: StateSnapshot['edges'] = [];
-  const stack: Array<TreeNode | null> = [root];
+  const stack: Array<TreeNode | null> = [...forest];
 
   while (stack.length) {
     const node = stack.pop();
@@ -38,8 +38,11 @@ export const snapshotFromRoot = (structureId: ID, root: TreeNode | null): StateS
     }
   }
 
-  return { nodes, edges, meta: { selection: root.id } };
+  return { nodes, edges, meta: { selection: forest.find((f) => f)?.id } };
 };
+
+export const snapshotFromRoot = (structureId: ID, root: TreeNode | null): StateSnapshot =>
+  snapshotFromForest([root]);
 
 export const restoreTreeFromSnapshot = (structureId: ID, snapshot: StateSnapshot): TreeNode | null => {
   if (snapshot.nodes.length === 0) return null;

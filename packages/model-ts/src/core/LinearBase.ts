@@ -40,16 +40,20 @@ export abstract class LinearBase implements Structure {
     this.values = restoreValuesFromSnapshot(this.id, snapshot);
   }
 
-  protected abstract handleOperation(op: Operation): OpStep | null;
+  protected abstract handleOperation(op: Operation): OpStep | OpStep[] | null;
 
   *apply(op: Operation): Iterable<OpStep> {
     if (targetId(op) !== this.id) {
       yield wrongTarget(op, this.id, this.snapshot());
       return;
     }
-    const step = this.handleOperation(op);
-    if (step) {
-      yield step;
+    const result = this.handleOperation(op);
+    if (Array.isArray(result)) {
+      for (const step of result) {
+        yield step;
+      }
+    } else if (result) {
+      yield result;
     }
   }
 

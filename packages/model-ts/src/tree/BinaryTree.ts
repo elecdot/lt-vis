@@ -1,7 +1,7 @@
 import type { ID, OpStep, Operation, VizEvent } from '@ltvis/shared';
-import { Value } from '../core/helpers';
+import { tipEvent, Value } from '../core/helpers';
 import { TreeBase } from './TreeBase';
-import { highlightStep, snapshotFromRoot, TreeNode } from './helpers';
+import { edgeId, highlightStep, snapshotFromRoot, TreeNode } from './helpers';
 
 type Order = 'preorder' | 'inorder' | 'postorder' | 'levelorder';
 
@@ -16,9 +16,12 @@ export class BinaryTree extends TreeBase {
     }
   }
 
-  protected handleOperation(op: Operation): OpStep | null {
+  protected handleOperation(op: Operation): OpStep | OpStep[] | null {
     if (op.kind === 'Create') {
       return this.createFromPayload(op);
+    }
+    if (op.kind === 'Attach') {
+      return this.handleAttach(op.parent, op.child, op.side);
     }
     if (op.kind === 'Traverse') {
       return this.handleTraverse(op.order as Order);
@@ -26,15 +29,44 @@ export class BinaryTree extends TreeBase {
     return this.errorStep('unsupported_op', `${this.kind} does not handle ${op.kind}`);
   }
 
-  private handleTraverse(order: Order): OpStep | null {
+  private handleTraverse(order: Order): OpStep[] | OpStep | null {
     if (!this.root) {
       return this.errorStep('empty_tree', 'Cannot traverse an empty tree');
     }
     const visited = traverse(this.root, order);
-    const snapshots = visited.map((nodeId) =>
-      highlightStep(nodeId, `Visit ${nodeId}`, snapshotFromRoot(this.id, this.root))
-    );
-    return snapshots[snapshots.length - 1] ?? null;
+    if (visited.length === 0) return this.errorStep('empty_traversal', 'Traversal produced no steps');
+    return visited.map((nodeId) => {
+      const snapshot = snapshotFromRoot(this.id, this.root);
+      return highlightStep(nodeId, `Visit ${nodeId}`, snapshot);
+    });
+  }
+
+  private handleAttach(parentId: ID, childLabel: ID, side: 'left' | 'right'): OpStep {
+    if (!this.root) {
+      return this.errorStep('empty_tree', 'Cannot attach to empty tree');
+    }
+    const parent = findNode(this.root, parentId);
+    if (!parent) return this.errorStep('not_found', `Parent ${parentId} not found`);
+    const isLeft = side === 'left';
+    if ((isLeft && parent.left) || (!isLeft && parent.right)) {
+      return this.errorStep('occupied', `Parent ${parentId} already has a ${side} child`);
+    }
+    const child: TreeNode = { id: childLabel, value: childLabel, left: null, right: null };
+    if (isLeft) parent.left = child;
+    else parent.right = child;
+    const snapshot = snapshotFromRoot(this.id, this.root);
+    const events: VizEvent[] = [
+      {
+        type: 'CreateNode',
+        node: snapshot.nodes.find((n) => n.id === child.id) ?? { id: child.id, label: String(child.value), value: child.value }
+      },
+      {
+        type: 'Link',
+        edge: { id: edgeId(parent.id, child.id, isLeft ? 'L' : 'R'), src: parent.id, dst: child.id, label: isLeft ? 'L' : 'R' }
+      },
+      tipEvent(`Attached ${childLabel} to ${parentId} (${side})`, child.id)
+    ];
+    return { explain: `Attach ${childLabel}`, events, snapshot };
   }
 }
 
@@ -62,3 +94,9 @@ const traverse = (root: TreeNode, order: Order): ID[] => {
   visit(root);
   return result;
 };
+
+function findNode(root: TreeNode | null, id: ID): TreeNode | null {
+  if (!root) return null;
+  if (root.id === id) return root;
+  return findNode(root.left ?? null, id) ?? findNode(root.right ?? null, id);
+}
