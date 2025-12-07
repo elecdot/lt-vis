@@ -11,6 +11,7 @@ describe('HuffmanTree', () => {
     const totalWeight = final?.nodes.find((n) => n.id === final.meta?.selection)?.value ?? 0;
     expect(totalWeight).toBe(100);
     steps.forEach((s) => expect(s.snapshot).toBeDefined());
+    expect(steps.length).toBeGreaterThan(1);
   });
 
   it('errors on empty weights', () => {

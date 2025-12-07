@@ -6,7 +6,7 @@ describe('BinaryTree', () => {
     const tree = new BinaryTree('BT1');
     Array.from(tree.apply({ kind: 'Create', id: 'BT1', structure: 'BinaryTree', payload: [1, 2, 3] }));
     const steps = Array.from(tree.apply({ kind: 'Traverse', target: 'BT1', order: 'preorder' }));
-    expect(steps.length).toBeGreaterThan(0);
+    expect(steps.length).toBe(3);
     steps.forEach((step) => {
       expect(step.snapshot.nodes.length).toBeGreaterThan(0);
       expect(step.events.some((e) => e.type === 'Highlight')).toBe(true);
@@ -19,6 +19,7 @@ describe('BinaryTree', () => {
     const steps = Array.from(tree.apply({ kind: 'Attach', target: 'BT2', parent: 'BT2:0', child: 'BT2:new', side: 'right' }));
     const final = steps.at(-1)?.snapshot;
     expect(final?.edges.some((e) => e.dst === 'BT2:new' && e.label === 'R')).toBe(true);
+    expect(final?.nodes.some((n) => n.id === 'BT2:new')).toBe(true);
   });
 
   it('resetFromSnapshot restores state', () => {

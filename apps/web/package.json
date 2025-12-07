@@ -16,7 +16,8 @@
     "@ltvis/model-ts": "workspace:*",
     "@ltvis/shared": "workspace:*",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

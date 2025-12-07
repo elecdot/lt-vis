@@ -14,6 +14,7 @@ describe('BST', () => {
     Array.from(bst.apply({ kind: 'Create', id: 'BST2', structure: 'BST', payload: [5, 3, 7] }));
     const steps = Array.from(bst.apply({ kind: 'Find', target: 'BST2', key: 7 }));
     expect(steps.length).toBeGreaterThan(0);
+    expect(steps.length).toBeGreaterThan(1);
     steps.forEach((s) => expect(s.snapshot.nodes.length).toBeGreaterThan(0));
   });
 
@@ -41,5 +42,25 @@ describe('BST', () => {
     bst.reset();
     bst.resetFromSnapshot(snap);
     expect(bst.snapshot().nodes.length).toBe(3);
+  });
+
+  it('errors on duplicate insert and missing delete key', () => {
+    const bst = new BST('BST5');
+    Array.from(bst.apply({ kind: 'Create', id: 'BST5', structure: 'BST', payload: [2, 1, 3] }));
+    const dup = Array.from(bst.apply({ kind: 'Insert', target: 'BST5', value: 2 }));
+    expect(dup[0].error?.code).toBe('duplicate');
+    const del = Array.from(bst.apply({ kind: 'Delete', target: 'BST5', key: 999 }));
+    expect(del[0].error?.code).toBe('not_found');
+    expect(del[0].snapshot.nodes.length).toBeGreaterThan(0);
+  });
+
+  it('traverses all orders with per-step snapshots', () => {
+    const bst = new BST('BST6');
+    Array.from(bst.apply({ kind: 'Create', id: 'BST6', structure: 'BST', payload: [5, 3, 7] }));
+    (['preorder', 'inorder', 'postorder', 'levelorder'] as const).forEach((order) => {
+      const steps = Array.from(bst.apply({ kind: 'Traverse', target: 'BST6', order }));
+      expect(steps.length).toBe(3);
+      steps.forEach((s) => expect(s.snapshot.nodes.length).toBe(3));
+    });
   });
 });

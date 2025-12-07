@@ -1,0 +1,134 @@
+import type { ID, OpStep, StateSnapshot, VizEvent } from '@ltvis/shared';
+import type { EdgeViewState, NodeViewState, PlaybackOptions, Renderer, ViewState } from './types';
+
+export const createEmptyViewState = (): ViewState => ({
+  nodes: new Map(),
+  edges: new Map(),
+  meta: {}
+});
+
+const cloneState = (snapshot?: StateSnapshot): ViewState => {
+  if (!snapshot) return createEmptyViewState();
+  const view = createEmptyViewState();
+  snapshot.nodes.forEach((node) => view.nodes.set(node.id, { ...node }));
+  snapshot.edges.forEach((edge) => view.edges.set(edge.id, { ...edge }));
+  view.meta.selection = snapshot.meta?.selection ?? null;
+  view.meta.stepIndex = snapshot.meta?.step;
+  return view;
+};
+
+export const applyEvent = (state: ViewState, event: VizEvent): void => {
+  switch (event.type) {
+    case 'CreateNode': {
+      state.nodes.set(event.node.id, { ...event.node });
+      return;
+    }
+    case 'RemoveNode': {
+      state.nodes.delete(event.id);
+      // prune edges attached to the node
+      for (const [edgeId, edge] of Array.from(state.edges.entries())) {
+        if (edge.src === event.id || edge.dst === event.id) state.edges.delete(edgeId);
+      }
+      return;
+    }
+    case 'Link': {
+      state.edges.set(event.edge.id, { ...event.edge });
+      return;
+    }
+    case 'Unlink': {
+      if (event.id) {
+        state.edges.delete(event.id);
+        return;
+      }
+      for (const [edgeId, edge] of Array.from(state.edges.entries())) {
+        if ((event.src && edge.src === event.src) || (event.dst && edge.dst === event.dst)) {
+          state.edges.delete(edgeId);
+        }
+      }
+      return;
+    }
+    case 'Move': {
+      const node = state.nodes.get(event.id);
+      if (node) {
+        state.nodes.set(event.id, { ...node, x: event.x, y: event.y });
+      }
+      return;
+    }
+    case 'Highlight': {
+      const target = event.target;
+      if (target.kind === 'node') {
+        const node = state.nodes.get(target.id);
+        if (node) state.nodes.set(target.id, { ...node, highlighted: true });
+      } else {
+        const edge = state.edges.get(target.id);
+        if (edge) state.edges.set(target.id, { ...edge, highlighted: true });
+      }
+      return;
+    }
+    case 'Compare':
+    case 'Swap':
+    case 'Rotate':
+    case 'Rebalance':
+      // keep no-op; could add meta markers later
+      return;
+    case 'Tip': {
+      state.meta.currentTip = event.text;
+      state.meta.selection = event.anchor ?? state.meta.selection ?? null;
+      return;
+    }
+    default:
+      return;
+  }
+};
+
+export const applyStep = (state: ViewState, step: OpStep, idx = 0): void => {
+  step.events.forEach((evt) => applyEvent(state, evt));
+  if (step.snapshot) {
+    state.meta.selection = step.snapshot.meta?.selection ?? state.meta.selection ?? null;
+  }
+  state.meta.stepIndex = idx;
+  state.meta.explain = step.explain;
+  if (step.explain && !state.meta.currentTip) {
+    state.meta.currentTip = step.explain;
+  }
+};
+
+export const applySteps = (state: ViewState, steps: OpStep[]): void => {
+  steps.forEach((step, idx) => applyStep(state, step, idx));
+};
+
+class RendererImpl implements Renderer {
+  private state: ViewState = createEmptyViewState();
+
+  getState(): ViewState {
+    return this.state;
+  }
+
+  reset(snapshot?: StateSnapshot): void {
+    this.state = cloneState(snapshot);
+  }
+
+  applyEvent(event: VizEvent): void {
+    applyEvent(this.state, event);
+  }
+
+  applyStep(step: OpStep, idx?: number): void {
+    applyStep(this.state, step, idx);
+  }
+
+  async play(steps: OpStep[], options?: PlaybackOptions): Promise<void> {
+    const delay = options?.delayMs ?? 0;
+    for (let i = 0; i < steps.length; i++) {
+      this.applyStep(steps[i], i);
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+}
+
+export const createRenderer = (snapshot?: StateSnapshot): Renderer => {
+  const renderer = new RendererImpl();
+  if (snapshot) renderer.reset(snapshot);
+  return renderer;
+};
