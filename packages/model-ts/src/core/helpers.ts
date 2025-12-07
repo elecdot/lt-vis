@@ -1,5 +1,6 @@
 import type {
   ID,
+  NodeState,
   OpStep,
   Operation,
   StateSnapshot,
@@ -49,6 +50,12 @@ export const eventsForSnapshot = (snapshot: StateSnapshot): VizEvent[] => {
   const edgeEvents: VizEvent[] = snapshot.edges.map((edge) => ({ type: 'Link', edge }));
   return [...nodeEvents, ...edgeEvents];
 };
+
+export const tipEvent = (text: string, anchor?: ID): VizEvent => ({
+  type: 'Tip',
+  text,
+  anchor
+});
 
 export const restoreValuesFromSnapshot = (structureId: ID, snapshot: StateSnapshot): Value[] => {
   const nodes = snapshot.nodes.filter((n) => n.id.startsWith(`${structureId}:`));
