@@ -1,4 +1,12 @@
-import type { ID, OpStep, Operation, StateSnapshot, Structure, StructureKind } from '@ltvis/shared';
+import type {
+  ID,
+  OpStep,
+  Operation,
+  StateSnapshot,
+  Structure,
+  StructureKind,
+  VizEvent
+} from '@ltvis/shared';
 import {
   buildLinearSnapshot,
   eventsForSnapshot,
@@ -61,7 +69,7 @@ export abstract class LinearBase implements Structure {
     }
     this.values = op.payload ? [...op.payload] : [];
     const snapshot = this.snapshot();
-    const events = [...eventsForSnapshot(snapshot), { type: 'Tip', text: `Created ${expected}` }];
+    const events: VizEvent[] = [...eventsForSnapshot(snapshot), { type: 'Tip', text: `Created ${expected}` }];
     return { explain: `Create ${expected}`, events, snapshot };
   }
 }
