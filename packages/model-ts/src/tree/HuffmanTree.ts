@@ -18,6 +18,9 @@ export class HuffmanTree extends TreeBase {
       return this.build(op.weights);
     }
     if (op.kind === 'Create') {
+      if (op.structure && op.structure !== this.kind) {
+        return this.errorStep('kind_mismatch', `Cannot create ${op.structure} on ${this.kind}`);
+      }
       this.reset();
       return { explain: 'Reset Huffman tree', events: [], snapshot: this.snapshot() };
     }

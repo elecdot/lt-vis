@@ -51,14 +51,17 @@ export class BinaryTree extends TreeBase {
     if ((isLeft && parent.left) || (!isLeft && parent.right)) {
       return this.errorStep('occupied', `Parent ${parentId} already has a ${side} child`);
     }
-    const child: TreeNode = { id: childLabel, value: childLabel, left: null, right: null };
+    const normalizedId = childLabel.startsWith(`${this.id}:`) ? childLabel : `${this.id}:${childLabel}`;
+    const child: TreeNode = { id: normalizedId, value: childLabel, left: null, right: null };
     if (isLeft) parent.left = child;
     else parent.right = child;
     const snapshot = snapshotFromRoot(this.id, this.root);
     const events: VizEvent[] = [
       {
         type: 'CreateNode',
-        node: snapshot.nodes.find((n) => n.id === child.id) ?? { id: child.id, label: String(child.value), value: child.value }
+        node:
+          snapshot.nodes.find((n) => n.id === child.id) ??
+          ({ id: child.id, label: String(child.value), value: child.value } as any)
       },
       {
         type: 'Link',

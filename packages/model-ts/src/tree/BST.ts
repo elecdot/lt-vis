@@ -24,6 +24,9 @@ export class BST extends TreeBase {
 
   protected handleOperation(op: Operation): OpStep | OpStep[] | null {
     if (op.kind === 'Create') {
+      if (op.structure && op.structure !== this.kind) {
+        return this.errorStep('kind_mismatch', `Cannot create ${op.structure} on ${this.kind}`);
+      }
       this.reset();
       if (op.payload && !Array.isArray(op.payload)) {
         return this.errorStep('invalid_payload', 'Create payload must be an array');

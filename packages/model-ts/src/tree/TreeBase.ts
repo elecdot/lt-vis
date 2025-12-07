@@ -39,17 +39,18 @@ export abstract class TreeBase implements Structure {
       return;
     }
     const result = this.handleOperation(op);
-    if (Array.isArray(result)) {
-      for (const step of result) {
-        yield step;
-      }
-    } else if (result) {
-      yield result;
+    if (!result) return;
+    const steps = Array.isArray(result) ? result : [result];
+    for (const step of steps) {
+      yield step;
     }
   }
 
   protected createFromPayload(op: Operation): OpStep | null {
     if (op.kind !== 'Create') return null;
+    if (op.structure && op.structure !== this.kind) {
+      return this.errorStep('kind_mismatch', `Cannot create ${op.structure} on ${this.kind}`);
+    }
     if (op.payload && !isValueArray(op.payload)) {
       return this.errorStep('invalid_payload', 'Create payload must be an array of numbers/strings');
     }
