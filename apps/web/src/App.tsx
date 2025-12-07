@@ -21,7 +21,13 @@ export default function App() {
               <span className="muted">
                 {op.kind === 'Create'
                   ? `${op.structure} ${op.id}`
-                  : `${op.target}${op.pos !== undefined ? ` @ ${op.pos}` : ''}`}
+                  : `${op.target}${
+                      op.kind === 'Insert' || op.kind === 'Delete'
+                        ? op.pos !== undefined
+                          ? ` @ ${op.pos}`
+                          : ''
+                        : ''
+                    }`}
               </span>
             </li>
           ))}
