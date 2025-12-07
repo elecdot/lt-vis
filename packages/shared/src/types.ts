@@ -1,6 +1,13 @@
 // Shared type contracts for LT-Vis (align with CONTEXT/domain/request.md §8.1)
+/**
+ * Globally unique identifier for nodes, edges, and structures.
+ * Recommended format: `${StructureId}:${localId}` to avoid collisions across structures.
+ */
 export type ID = string;
 
+/**
+ * Visual/renderer-facing state for a single node.
+ */
 export interface NodeState {
   id: ID;
   label?: string;
@@ -11,6 +18,9 @@ export interface NodeState {
   props?: Record<string, unknown>;
 }
 
+/**
+ * Visual/renderer-facing state for a single edge.
+ */
 export interface EdgeState {
   id: ID;
   src: ID;
@@ -19,6 +29,10 @@ export interface EdgeState {
   props?: Record<string, unknown>;
 }
 
+/**
+ * Snapshot of the current structure state used for timeline playback and persistence.
+ * stepBack must prefer these snapshots; replay-from-zero is only a documented fallback.
+ */
 export interface StateSnapshot {
   nodes: NodeState[];
   edges: EdgeState[];
@@ -29,6 +43,10 @@ export interface StateSnapshot {
   };
 }
 
+/**
+ * Rendering instructions emitted by the Model and consumed by the Renderer.
+ * Events must be idempotent so reruns produce the same final ViewState.
+ */
 export type VizEvent =
   | { type: 'CreateNode'; node: NodeState }
   | { type: 'RemoveNode'; id: ID }
@@ -42,15 +60,22 @@ export type VizEvent =
   | { type: 'Rebalance'; info?: Record<string, unknown> }
   | { type: 'Tip'; text: string; anchor?: ID };
 
+/**
+ * A single timeline step consisting of renderer events and an accompanying snapshot.
+ * error indicates the operation was rejected; the model state must remain unchanged after an error step.
+ */
 export interface OpStep {
   events: VizEvent[];
   explain?: string;
-  snapshot?: Partial<StateSnapshot>;
+  snapshot: StateSnapshot;
   error?: { code: string; message: string; detail?: unknown };
 }
 
 export type StructureKind = 'SeqList' | 'LinkedList' | 'Stack' | 'BinaryTree' | 'BST' | 'Huffman';
 
+/**
+ * User-initiated actions translated by the UI/command bus into model operations.
+ */
 export type Operation =
   | { kind: 'Create'; id: ID; structure: StructureKind; payload?: unknown }
   | { kind: 'Insert'; target: ID; pos?: number; value?: number | string }
@@ -62,10 +87,18 @@ export type Operation =
   | { kind: 'Pop'; target: ID }
   | { kind: 'BuildHuffman'; target: ID; weights: Record<string, number> };
 
+/**
+ * Headless model contract implemented by each data structure.
+ * - snapshot(): returns the current StateSnapshot for playback/persistence.
+ * - reset(): clears internal state to an empty structure of the same kind.
+ * - resetFromSnapshot(): restores state without replaying operations (persistence/import).
+ * - apply(): executes an Operation and yields OpSteps; final step must reflect latest snapshot.
+ */
 export interface Structure {
   kind: StructureKind;
   id: ID;
   snapshot(): StateSnapshot;
+   reset(): void;
   resetFromSnapshot(snapshot: StateSnapshot): void;
   apply(op: Operation): Iterable<OpStep>;
 }
