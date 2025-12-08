@@ -50,6 +50,26 @@ body {
   margin: 0 0 12px;
 }
 
+.form {
+  display: grid;
+  gap: 8px;
+}
+
+.form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.form input,
+.form select,
+.form button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
 .list {
   list-style: none;
   padding: 0;
