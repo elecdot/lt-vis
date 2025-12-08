@@ -7,7 +7,7 @@ import type { ViewState } from './viz/types';
 import { handleUICommand } from './core/commands';
 import { createPlaybackController } from './core/playback';
 import { SessionImpl } from './core/session';
-import { createEmptyTimeline } from './core/timeline';
+import { createEmptyTimeline, flattenSteps } from './core/timeline';
 
 type FormKind = 'LinkedList' | 'SeqList' | 'Stack' | 'BST' | 'Huffman';
 type FormOp = 'Create' | 'Insert' | 'Delete' | 'Find' | 'Push' | 'Pop' | 'BuildHuffman';
@@ -157,7 +157,7 @@ export default function App() {
 
   const handleDemo = (name: 'linked-list' | 'bst' | 'huffman') => {
     handleUICommand(sessionRef.current, playbackRef.current, { type: 'LoadDemo', name });
-    const steps = sessionRef.current.getTimeline().entries.slice(-1)[0]?.steps ?? [];
+    const steps = flattenSteps(sessionRef.current.getTimeline());
     steps.forEach((s, idx) => rendererRef.current.applyStep(s, idx));
     syncView();
   };
@@ -266,6 +266,31 @@ export default function App() {
         </p>
         <p className="muted">Current explain: {viewState.meta.explain ?? '—'}</p>
         <p className="muted">Current tip: {viewState.meta.currentTip ?? '—'}</p>
+        <div className="pill-row">
+          <button
+            onClick={() => {
+              sessionRef.current = new SessionImpl();
+              rendererRef.current = createRenderer();
+              playbackRef.current = createPlaybackController(
+                rendererRef.current,
+                () => sessionRef.current.getTimeline(),
+                (snap) => rendererRef.current.reset(snap),
+                {
+                  onStepApplied: () => {
+                    syncView();
+                    const tl = sessionRef.current.getTimeline();
+                    setTimelineState({ ...tl, entries: [...tl.entries] });
+                  }
+                }
+              );
+              setError(null);
+              setViewState(cloneViewState(rendererRef.current.getState()));
+              setTimelineState(createEmptyTimeline());
+            }}
+          >
+            Reset
+          </button>
+        </div>
       </section>
 
       <section className="card">

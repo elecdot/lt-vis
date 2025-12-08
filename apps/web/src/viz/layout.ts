@@ -28,8 +28,8 @@ export const layoutLinear = (state: ViewState, options?: LinearLayoutOptions): V
 };
 
 export const layoutTree = (state: ViewState, options?: TreeLayoutOptions): ViewState => {
-  const layerGap = options?.layerGap ?? 140;
-  const siblingGap = options?.siblingGap ?? 100;
+  const layerGap = options?.layerGap ?? 160;
+  const siblingGap = options?.siblingGap ?? 140;
 
   // Build adjacency to find roots
   const children = new Map<string, string[]>();

@@ -33,4 +33,17 @@ describe('PlaybackController', () => {
     controller.stepBack();
     expect(renderer.getState().nodes.has('n1')).toBe(true);
   });
+
+  it('onStepApplied fires for each step during play', async () => {
+    let tl = createEmptyTimeline();
+    tl = appendEntry(tl, { steps });
+    const renderer = createRenderer();
+    const onStepApplied = vi.fn();
+    const controller = createPlaybackController(renderer, () => tl, (snap) => renderer.reset(snap), { onStepApplied });
+    vi.useFakeTimers();
+    const playPromise = controller.play();
+    await vi.runAllTimersAsync();
+    await playPromise;
+    expect(onStepApplied).toHaveBeenCalledTimes(steps.length);
+  });
 });
