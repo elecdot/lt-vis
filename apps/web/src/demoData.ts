@@ -16,9 +16,9 @@ export const demoStep: OpStep = {
       { id: 'DemoList:3', label: '3', value: 3, x: 3, y: 0 }
     ],
     edges: [
-      { id: 'DemoList:e0', src: 'DemoList:0', dst: 'DemoList:1', label: 'next' },
-      { id: 'DemoList:e1', src: 'DemoList:1', dst: 'DemoList:2', label: 'next' },
-      { id: 'DemoList:e2', src: 'DemoList:2', dst: 'DemoList:3', label: 'next' }
+      { id: 'DemoList:0->DemoList:1:next', src: 'DemoList:0', dst: 'DemoList:1', label: 'next' },
+      { id: 'DemoList:1->DemoList:2:next', src: 'DemoList:1', dst: 'DemoList:2', label: 'next' },
+      { id: 'DemoList:2->DemoList:3:next', src: 'DemoList:2', dst: 'DemoList:3', label: 'next' }
     ],
     meta: { step: 1, selection: 'DemoList:1' }
   }

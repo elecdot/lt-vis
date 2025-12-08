@@ -25,6 +25,10 @@ export const createPlaybackController = (
   let status: PlaybackState = 'idle';
   let speedMultiplier = 1;
   let currentIndex = -1;
+  const updateTimelineIndex = (idx: number) => {
+    const tl = timeline();
+    tl.currentStepIndex = idx;
+  };
 
   const play = async (overrideSteps?: OpStep[]) => {
     status = 'playing';
@@ -33,6 +37,7 @@ export const createPlaybackController = (
       if (status !== 'playing') break;
       renderer.applyStep(steps[i], i);
       currentIndex = i;
+      updateTimelineIndex(i);
       const delay = 200 / speedMultiplier;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -50,6 +55,7 @@ export const createPlaybackController = (
     const step = flattenSteps(tl)[nextIdx];
     renderer.applyStep(step, nextIdx);
     currentIndex = nextIdx;
+    updateTimelineIndex(nextIdx);
   };
 
   const doStepBack = () => {
@@ -62,12 +68,14 @@ export const createPlaybackController = (
       resetToSnapshot(snapshot);
       steps.slice(0, prevIdx + 1).forEach((s, idx) => renderer.applyStep(s, idx));
       currentIndex = prevIdx;
+      updateTimelineIndex(prevIdx);
       return;
     }
     // fallback: replay from zero
     renderer.reset();
     steps.slice(0, prevIdx + 1).forEach((s, idx) => renderer.applyStep(s, idx));
     currentIndex = prevIdx;
+    updateTimelineIndex(prevIdx);
   };
 
   const doJumpTo = (index: number) => {
@@ -79,6 +87,7 @@ export const createPlaybackController = (
     if (snapshot) resetToSnapshot(snapshot);
     steps.slice(0, clamped + 1).forEach((s, idx) => renderer.applyStep(s, idx));
     currentIndex = clamped;
+    updateTimelineIndex(clamped);
   };
 
   const setSpeed = (multiplier: number) => {
