@@ -166,6 +166,9 @@ export default function App() {
     handleUICommand(sessionRef.current, playbackRef.current, { type: 'Playback', action });
   };
 
+  const atStart = timelineState.currentStepIndex <= 0;
+  const atEnd = timelineState.currentStepIndex >= timelineState.totalSteps - 1;
+
   return (
     <main className="app">
       <header className="app__header">
@@ -174,8 +177,9 @@ export default function App() {
         <p className="lede">Model + renderer + timeline, ready for classroom demos.</p>
       </header>
 
-      <section className="card">
-        <h2>Commands</h2>
+      <div className="layout">
+        <section className="card">
+          <h2>Commands</h2>
         <form className="form" onSubmit={onSubmit}>
           <label className="form__row">
             Structure
@@ -227,76 +231,83 @@ export default function App() {
             </button>
           ))}
         </div>
-      </section>
+        </section>
 
-      <section className="card">
-        <h2>Playback</h2>
-        <div className="pill-row">
-          <button onClick={() => onPlayback('play')}>Play</button>
-          <button onClick={() => onPlayback('pause')}>Pause</button>
-          <button onClick={() => onPlayback('stepBack')}>Step Back</button>
-          <button onClick={() => onPlayback('stepForward')}>Step Forward</button>
-        </div>
-        <div className="pill-row">
-          <label className="form__row">
-            Jump to step
-            <input
-              type="number"
-              min={0}
-              max={Math.max(timelineState.totalSteps - 1, 0)}
-              onChange={(e) => {
-                const idx = Number(e.target.value);
-                playbackRef.current.jumpTo(idx);
-              }}
-            />
-          </label>
-          <label className="form__row">
-            Speed
-            <select onChange={(e) => playbackRef.current.setSpeed(Number(e.target.value))}>
-              <option value="0.5">0.5x</option>
-              <option value="1" defaultChecked>
-                1x
-              </option>
-              <option value="2">2x</option>
-            </select>
-          </label>
-        </div>
-        <p className="muted">
-          Step {Math.max(timelineState.currentStepIndex, 0)} / {Math.max(timelineState.totalSteps - 1, 0)}
-        </p>
-        <p className="muted">Current explain: {viewState.meta.explain ?? '—'}</p>
-        <p className="muted">Current tip: {viewState.meta.currentTip ?? '—'}</p>
-        <div className="pill-row">
-          <button
-            onClick={() => {
-              sessionRef.current = new SessionImpl();
-              rendererRef.current = createRenderer();
-              playbackRef.current = createPlaybackController(
-                rendererRef.current,
-                () => sessionRef.current.getTimeline(),
-                (snap) => rendererRef.current.reset(snap),
-                {
-                  onStepApplied: () => {
-                    syncView();
-                    const tl = sessionRef.current.getTimeline();
-                    setTimelineState({ ...tl, entries: [...tl.entries] });
+        <section className="card">
+          <h2>Playback</h2>
+          <div className="pill-row">
+            <button onClick={() => onPlayback('play')}>Play</button>
+            <button onClick={() => onPlayback('pause')}>Pause</button>
+            <button onClick={() => onPlayback('stepBack')} disabled={atStart}>
+              Step Back
+            </button>
+            <button onClick={() => onPlayback('stepForward')} disabled={atEnd}>
+              Step Forward
+            </button>
+          </div>
+          <div className="pill-row">
+            <label className="form__row">
+              Jump to step
+              <input
+                type="range"
+                min={0}
+                max={Math.max(timelineState.totalSteps - 1, 0)}
+                value={Math.max(timelineState.currentStepIndex, 0)}
+                onChange={(e) => {
+                  const idx = Number(e.target.value);
+                  playbackRef.current.jumpTo(idx);
+                  syncView();
+                }}
+              />
+            </label>
+            <label className="form__row">
+              Speed
+              <select onChange={(e) => playbackRef.current.setSpeed(Number(e.target.value))}>
+                <option value="0.5">0.5x</option>
+                <option value="1" defaultChecked>
+                  1x
+                </option>
+                <option value="2">2x</option>
+              </select>
+            </label>
+          </div>
+          <p className="muted">
+            Step {Math.max(timelineState.currentStepIndex, 0)} / {Math.max(timelineState.totalSteps - 1, 0)}
+          </p>
+          <p className="muted">Current explain: {viewState.meta.explain ?? '—'}</p>
+          <p className="muted">Current tip: {viewState.meta.currentTip ?? '—'}</p>
+          <div className="pill-row">
+            <button
+              onClick={() => {
+                sessionRef.current = new SessionImpl();
+                rendererRef.current = createRenderer();
+                playbackRef.current = createPlaybackController(
+                  rendererRef.current,
+                  () => sessionRef.current.getTimeline(),
+                  (snap) => rendererRef.current.reset(snap),
+                  {
+                    onStepApplied: () => {
+                      syncView();
+                      const tl = sessionRef.current.getTimeline();
+                      setTimelineState({ ...tl, entries: [...tl.entries] });
+                    }
                   }
-                }
-              );
-              setError(null);
-              setViewState(cloneViewState(rendererRef.current.getState()));
-              setTimelineState(createEmptyTimeline());
-            }}
-          >
-            Reset
-          </button>
-        </div>
-      </section>
+                );
+                setError(null);
+                setViewState(cloneViewState(rendererRef.current.getState()));
+                setTimelineState(createEmptyTimeline());
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </section>
 
-      <section className="card">
-        <h2>Canvas</h2>
-        <DemoCanvas state={viewState} />
-      </section>
+        <section className="card card--canvas">
+          <h2>Canvas</h2>
+          <DemoCanvas state={viewState} />
+        </section>
+      </div>
     </main>
   );
 }

@@ -46,4 +46,13 @@ describe('PlaybackController', () => {
     await playPromise;
     expect(onStepApplied).toHaveBeenCalledTimes(steps.length);
   });
+
+  it('jumpTo replays to the given index', () => {
+    let tl = createEmptyTimeline();
+    tl = appendEntry(tl, { steps });
+    const renderer = createRenderer();
+    const controller = createPlaybackController(renderer, () => tl, (snap) => renderer.reset(snap));
+    controller.jumpTo(1);
+    expect(renderer.getState().nodes.has('n1')).toBe(true);
+  });
 });
