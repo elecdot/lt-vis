@@ -66,6 +66,8 @@ export class HuffmanTree extends TreeBase {
       steps.push({
         explain: 'Merge step',
         events: [
+          { type: 'Highlight', target: { kind: 'node', id: left.id }, style: 'compare' },
+          { type: 'Highlight', target: { kind: 'node', id: right.id }, style: 'compare' },
           { type: 'CreateNode', node: snapshot.nodes.find((n) => n.id === parent.id) ?? { id: parent.id, value: parent.value } as any },
           { type: 'Link', edge: { id: edgeId(parent.id, left.id, 'L'), src: parent.id, dst: left.id, label: 'L' } },
           { type: 'Link', edge: { id: edgeId(parent.id, right.id, 'R'), src: parent.id, dst: right.id, label: 'R' } },

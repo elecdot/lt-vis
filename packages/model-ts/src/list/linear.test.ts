@@ -13,6 +13,7 @@ describe('SeqList', () => {
     const steps = Array.from(list.apply({ kind: 'Insert', target: 'L1', pos: 1, value: 2 }));
     const finalSnapshot = steps.at(-1)?.snapshot;
 
+    expect(steps.length).toBeGreaterThan(1);
     expect(finalSnapshot?.nodes.map((n) => n.value)).toEqual([1, 2, 3, 4]);
     expect(steps[0].events.length).toBeGreaterThan(0);
     expect(list.snapshot().nodes.map((n) => n.value)).toEqual([1, 2, 3, 4]);
@@ -34,7 +35,7 @@ describe('LinkedList', () => {
     const steps = Array.from(list.apply({ kind: 'Delete', target: 'LL1', pos: 1 }));
     const finalSnapshot = steps.at(-1)?.snapshot;
     expect(finalSnapshot?.nodes.map((n) => n.value)).toEqual([1, 4]);
-    expect(steps[0].events.some((e) => e.type === 'RemoveNode')).toBe(true);
+    expect(steps.some((s) => s.events.some((e) => e.type === 'RemoveNode'))).toBe(true);
   });
 });
 
@@ -45,11 +46,11 @@ describe('Stack', () => {
 
     const pushSteps = Array.from(stack.apply({ kind: 'Push', target: 'S1', value: 20 }));
     expect(pushSteps.at(-1)?.snapshot.nodes.map((n) => n.value)).toEqual([10, 20]);
-    expect(pushSteps[0].events.some((e) => e.type === 'CreateNode')).toBe(true);
+    expect(pushSteps.some((s) => s.events.some((e) => e.type === 'CreateNode'))).toBe(true);
 
     const popSteps = Array.from(stack.apply({ kind: 'Pop', target: 'S1' }));
     expect(popSteps.at(-1)?.snapshot.nodes.map((n) => n.value)).toEqual([10]);
-    expect(popSteps[0].events.some((e) => e.type === 'RemoveNode')).toBe(true);
+    expect(popSteps.some((s) => s.events.some((e) => e.type === 'RemoveNode'))).toBe(true);
   });
 
   it('errors on empty pop', () => {

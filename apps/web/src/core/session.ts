@@ -31,7 +31,11 @@ export class SessionImpl implements Session {
       throw new Error('Operation missing target');
     }
     const target = op.target;
-    const structure = this.structures.get(target);
+    let structure = this.structures.get(target);
+    if (!structure && op.kind === 'BuildHuffman') {
+      this.addStructure('Huffman', target);
+      structure = this.structures.get(target);
+    }
     if (!structure) throw new Error(`Structure ${target} not found`);
     const steps = Array.from(structure.apply(op));
     const withSnapshots = steps.map((s) => (s.snapshot ? s : { ...s, snapshot: structure.snapshot() }));

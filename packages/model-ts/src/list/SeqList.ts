@@ -9,7 +9,7 @@ export class SeqList extends LinearBase {
     super(id, initial);
   }
 
-  protected handleOperation(op: Operation): OpStep | null {
+  protected handleOperation(op: Operation): OpStep | OpStep[] | null {
     if (op.kind === 'Create') {
       return this.handleCreate(op, this.kind);
     }
@@ -21,27 +21,54 @@ export class SeqList extends LinearBase {
         if (pos < 0 || pos > this.values.length) {
           return this.errorStep('out_of_bounds', `Insert position ${pos} is invalid`);
         }
+        const steps: OpStep[] = [];
+        // traversal highlights
+        for (let i = 0; i < pos; i++) {
+          const snapshot = this.snapshot();
+          const nodeId = `${this.id}:${i}`;
+          steps.push({
+            explain: `Traverse to index ${i}`,
+            events: [{ type: 'Highlight', target: { kind: 'node', id: nodeId }, style: 'traverse' }],
+            snapshot
+          });
+        }
         this.values.splice(pos, 0, op.value);
         const snapshot = this.snapshot();
         const nodeId = `${this.id}:${pos}`;
         const events: VizEvent[] = [
           { type: 'CreateNode', node: snapshot.nodes[pos] },
+          { type: 'Move', id: nodeId, x: snapshot.nodes[pos].x ?? pos, y: snapshot.nodes[pos].y ?? 0 },
           { type: 'Tip', text: `Inserted ${op.value} at ${pos}`, anchor: nodeId }
         ];
-        return { explain: `Insert at ${pos}`, events, snapshot };
+        steps.push({ explain: `Insert at ${pos}`, events, snapshot });
+        return steps;
       }
       case 'Delete': {
         const pos = op.pos ?? this.values.length - 1;
         if (pos < 0 || pos >= this.values.length) {
           return this.errorStep('out_of_bounds', `Delete position ${pos} is invalid`);
         }
+        const steps: OpStep[] = [];
+        for (let i = 0; i <= pos; i++) {
+          const snapshot = this.snapshot();
+          steps.push({
+            explain: `Traverse to index ${i}`,
+            events: [{ type: 'Highlight', target: { kind: 'node', id: `${this.id}:${i}` }, style: 'traverse' }],
+            snapshot
+          });
+        }
+        const removedId = `${this.id}:${pos}`;
         this.values.splice(pos, 1);
         const snapshot = this.snapshot();
-        const events: VizEvent[] = [
-          { type: 'RemoveNode', id: `${this.id}:${pos}` },
-          { type: 'Tip', text: `Deleted index ${pos}`, anchor: snapshot.nodes[pos]?.id }
-        ];
-        return { explain: `Delete at ${pos}`, events, snapshot };
+        steps.push({
+          explain: `Delete at ${pos}`,
+          events: [
+            { type: 'RemoveNode', id: removedId },
+            { type: 'Tip', text: `Deleted index ${pos}`, anchor: snapshot.nodes[pos]?.id }
+          ],
+          snapshot
+        });
+        return steps;
       }
       case 'Find': {
         const idx = this.values.findIndex((v) => v === op.key);

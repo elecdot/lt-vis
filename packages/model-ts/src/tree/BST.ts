@@ -32,9 +32,15 @@ export class BST extends TreeBase {
         return this.errorStep('invalid_payload', 'Create payload must be an array');
       }
       const payload = (op.payload as Value[] | undefined) ?? [];
-      payload.forEach((v) => this.insertValue(v));
-      const snapshot = this.snapshot();
-      return { explain: 'Create BST', events: snapshot.nodes.map((n) => ({ type: 'CreateNode', node: n } as VizEvent)), snapshot };
+      const steps: OpStep[] = [];
+      payload.forEach((v) => {
+        const inserted = this.insertValue(v);
+        if (inserted) {
+          if (Array.isArray(inserted)) steps.push(...inserted);
+          else steps.push(inserted);
+        }
+      });
+      return steps.length ? steps : null;
     }
     if (op.kind === 'Insert') {
       if (op.value === undefined) return this.errorStep('invalid_value', 'Insert requires a value');
@@ -59,37 +65,66 @@ export class BST extends TreeBase {
     return node;
   }
 
-  private insertValue(value: Value): OpStep | null {
-    const events: VizEvent[] = [];
+  private insertValue(value: Value): OpStep[] | null {
+    const steps: OpStep[] = [];
     if (!this.root) {
       this.root = this.newNode(value);
+      const snapshot = this.snapshot();
+      steps.push({ explain: `Insert ${value}`, events: [{ type: 'CreateNode', node: snapshot.nodes[0] } as VizEvent], snapshot });
     } else {
       let current = this.root;
+      const traverseEvents: VizEvent[] = [];
       while (true) {
         if (value < current.value) {
-          events.push({ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' });
+          traverseEvents.push({ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' });
           if (!current.left) {
             current.left = this.newNode(value);
-            events.push({ type: 'Link', edge: { id: edgeId(current.id, current.left.id, 'L'), src: current.id, dst: current.left.id, label: 'L' } });
+            const snapshot = this.snapshot();
+            steps.push({
+              explain: `Traverse left from ${current.id}`,
+              events: traverseEvents,
+              snapshot
+            });
+            steps.push({
+              explain: `Insert ${value}`,
+              events: [
+                { type: 'CreateNode', node: snapshot.nodes.find((n) => n.id === current.left!.id) ?? { id: current.left!.id, value } } as VizEvent,
+                { type: 'Link', edge: { id: edgeId(current.id, current.left.id, 'L'), src: current.id, dst: current.left.id, label: 'L' } },
+                tipEvent(`Inserted ${value}`, current.left.id)
+              ],
+              snapshot
+            });
             break;
           }
           current = current.left;
         } else if (value > current.value) {
-          events.push({ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' });
+          traverseEvents.push({ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' });
           if (!current.right) {
             current.right = this.newNode(value);
-            events.push({ type: 'Link', edge: { id: edgeId(current.id, current.right.id, 'R'), src: current.id, dst: current.right.id, label: 'R' } });
+            const snapshot = this.snapshot();
+            steps.push({
+              explain: `Traverse right from ${current.id}`,
+              events: traverseEvents,
+              snapshot
+            });
+            steps.push({
+              explain: `Insert ${value}`,
+              events: [
+                { type: 'CreateNode', node: snapshot.nodes.find((n) => n.id === current.right!.id) ?? { id: current.right!.id, value } } as VizEvent,
+                { type: 'Link', edge: { id: edgeId(current.id, current.right.id, 'R'), src: current.id, dst: current.right.id, label: 'R' } },
+                tipEvent(`Inserted ${value}`, current.right.id)
+              ],
+              snapshot
+            });
             break;
           }
           current = current.right;
         } else {
-          return this.errorStep('duplicate', `Value ${value} already exists`);
+          return [this.errorStep('duplicate', `Value ${value} already exists`)];
         }
       }
     }
-    events.push(tipEvent(`Inserted ${value}`));
-    const snapshot = this.snapshot();
-    return { explain: `Insert ${value}`, events, snapshot };
+    return steps;
   }
 
   private findValue(key: Value): OpStep | OpStep[] {
@@ -112,14 +147,18 @@ export class BST extends TreeBase {
     return steps;
   }
 
-  private deleteValue(key: Value): OpStep {
-    const events: VizEvent[] = [];
+  private deleteValue(key: Value): OpStep | OpStep[] {
+    const steps: OpStep[] = [];
     let parent: TreeNode | null = null;
     let current = this.root;
     let direction: 'L' | 'R' | null = null;
 
     while (current && current.value !== key) {
-      events.push({ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' });
+      steps.push({
+        explain: `Traverse for ${key}`,
+        events: [{ type: 'Highlight', target: { kind: 'node', id: current.id }, style: 'traverse' }],
+        snapshot: this.snapshot()
+      });
       parent = current;
       if (key < current.value) {
         direction = 'L';
@@ -154,17 +193,22 @@ export class BST extends TreeBase {
         this.root = child;
       } else if (direction === 'L') {
         parent.left = child;
-        events.push({ type: 'Unlink', id: edgeId(parent.id, current.id, 'L'), src: parent.id, dst: current.id });
       } else {
         parent.right = child;
-        events.push({ type: 'Unlink', id: edgeId(parent.id, current.id, 'R'), src: parent.id, dst: current.id });
       }
     }
 
-    events.push({ type: 'RemoveNode', id: current.id });
-    events.push(tipEvent(`Deleted ${key}`));
     const snapshot = this.snapshot();
-    return { explain: `Delete ${key}`, events, snapshot };
+    steps.push({
+      explain: `Delete ${key}`,
+      events: [
+        ...(parent && direction ? [{ type: 'Unlink', id: edgeId(parent.id, current.id, direction), src: parent.id, dst: current.id } as VizEvent] : []),
+        { type: 'RemoveNode', id: current.id },
+        tipEvent(`Deleted ${key}`)
+      ],
+      snapshot
+    });
+    return steps;
   }
 
   private traverse(order: Order): OpStep[] | OpStep {

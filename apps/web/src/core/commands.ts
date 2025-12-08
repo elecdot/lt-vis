@@ -20,6 +20,7 @@ const bstDemo: Operation[] = [
 ];
 
 const huffmanDemo: Operation[] = [
+  { kind: 'Create', id: 'HUF', structure: 'Huffman' },
   { kind: 'BuildHuffman', target: 'HUF', weights: { a: 5, b: 9, c: 12, d: 13, e: 16, f: 45 } }
 ];
 
