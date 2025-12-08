@@ -33,27 +33,52 @@ export default function App() {
   const sessionRef = useRef(new SessionImpl());
   const rendererRef = useRef(createRenderer());
   const playbackRef = useRef(
-    createPlaybackController(rendererRef.current, () => sessionRef.current.getTimeline(), (snap) => rendererRef.current.reset(snap))
+    createPlaybackController(
+      rendererRef.current,
+      () => sessionRef.current.getTimeline(),
+      (snap) => rendererRef.current.reset(snap),
+      {
+        onStepApplied: () => {
+          syncView();
+          const tl = sessionRef.current.getTimeline();
+          setTimelineState({ ...tl, entries: [...tl.entries] });
+        }
+      }
+    )
   );
 
   const [viewState, setViewState] = useState<ViewState>(cloneViewState(rendererRef.current.getState()));
+  const [timelineState, setTimelineState] = useState(() => sessionRef.current.getTimeline());
   const [opKind, setOpKind] = useState<FormOp>('Create');
   const [structureKind, setStructureKind] = useState<FormKind>('LinkedList');
   const [targetId, setTargetId] = useState('LL1');
   const [pos, setPos] = useState<string>('0');
   const [value, setValue] = useState<string>('1');
   const [weights, setWeights] = useState<string>('a:5,b:9,c:12');
+  const [error, setError] = useState<string | null>(null);
 
-  const refreshView = () => {
+  const syncView = () => {
     setViewState(cloneViewState(autoLayout(rendererRef.current.getState())));
+    const tl = sessionRef.current.getTimeline();
+    setTimelineState({ ...tl, entries: [...tl.entries] });
   };
 
   const runOps = (ops: Operation[]) => {
+    const prev = cloneViewState(rendererRef.current.getState());
     ops.forEach((op) => {
       const steps = sessionRef.current.executeOperation(op);
+      const last = steps[steps.length - 1];
+      if (last?.error) {
+        setError(last.error.message);
+        rendererRef.current.reset();
+        prev.nodes.forEach((n) => rendererRef.current.getState().nodes.set(n.id, n));
+        prev.edges.forEach((e) => rendererRef.current.getState().edges.set(e.id, e));
+        return;
+      }
       steps.forEach((s, idx) => rendererRef.current.applyStep(s, idx));
     });
-    refreshView();
+    setError(null);
+    syncView();
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -85,14 +110,22 @@ export default function App() {
       }
     })();
     if (op.kind === 'Create') {
-      sessionRef.current.addStructure(kind, targetId, (op as any).payload);
+      const prev = cloneViewState(rendererRef.current.getState());
+      sessionRef.current.addStructure(kind as StructureKind, targetId, (op as any).payload);
       const steps = sessionRef.current.getTimeline().entries.slice(-1)[0]?.steps ?? [];
-      steps.forEach((s, idx) => rendererRef.current.applyStep(s, idx));
-      refreshView();
+      const last = steps[steps.length - 1];
+      if (last?.error) {
+        setError(last.error.message);
+        rendererRef.current.reset();
+        prev.nodes.forEach((n) => rendererRef.current.getState().nodes.set(n.id, n));
+        prev.edges.forEach((e) => rendererRef.current.getState().edges.set(e.id, e));
+      } else {
+        steps.forEach((s, idx) => rendererRef.current.applyStep(s, idx));
+        setError(null);
+      }
+      syncView();
     } else {
-      const steps = sessionRef.current.executeOperation(op);
-      steps.forEach((s, idx) => rendererRef.current.applyStep(s, idx));
-      refreshView();
+      runOps([op]);
     }
   };
 
@@ -126,12 +159,11 @@ export default function App() {
     handleUICommand(sessionRef.current, playbackRef.current, { type: 'LoadDemo', name });
     const steps = sessionRef.current.getTimeline().entries.slice(-1)[0]?.steps ?? [];
     steps.forEach((s, idx) => rendererRef.current.applyStep(s, idx));
-    refreshView();
+    syncView();
   };
 
   const onPlayback = (action: 'play' | 'pause' | 'stepForward' | 'stepBack') => {
     handleUICommand(sessionRef.current, playbackRef.current, { type: 'Playback', action });
-    refreshView();
   };
 
   return (
@@ -187,6 +219,7 @@ export default function App() {
           )}
           <button type="submit">Run</button>
         </form>
+        {error && <p className="error">Error: {error}</p>}
         <div className="pill-row">
           {demos.map((d) => (
             <button key={d.name} className="pill" onClick={() => handleDemo(d.name)}>
@@ -204,6 +237,33 @@ export default function App() {
           <button onClick={() => onPlayback('stepBack')}>Step Back</button>
           <button onClick={() => onPlayback('stepForward')}>Step Forward</button>
         </div>
+        <div className="pill-row">
+          <label className="form__row">
+            Jump to step
+            <input
+              type="number"
+              min={0}
+              max={Math.max(timelineState.totalSteps - 1, 0)}
+              onChange={(e) => {
+                const idx = Number(e.target.value);
+                playbackRef.current.jumpTo(idx);
+              }}
+            />
+          </label>
+          <label className="form__row">
+            Speed
+            <select onChange={(e) => playbackRef.current.setSpeed(Number(e.target.value))}>
+              <option value="0.5">0.5x</option>
+              <option value="1" defaultChecked>
+                1x
+              </option>
+              <option value="2">2x</option>
+            </select>
+          </label>
+        </div>
+        <p className="muted">
+          Step {Math.max(timelineState.currentStepIndex, 0)} / {Math.max(timelineState.totalSteps - 1, 0)}
+        </p>
         <p className="muted">Current explain: {viewState.meta.explain ?? '—'}</p>
         <p className="muted">Current tip: {viewState.meta.currentTip ?? '—'}</p>
       </section>

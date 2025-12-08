@@ -70,6 +70,11 @@ body {
   border: 1px solid #e2e8f0;
 }
 
+.error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .list {
   list-style: none;
   padding: 0;

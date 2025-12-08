@@ -20,7 +20,8 @@ export interface PlaybackController {
 export const createPlaybackController = (
   renderer: Renderer,
   timeline: () => TimelineState,
-  resetToSnapshot: (snapshot: StateSnapshot) => void
+  resetToSnapshot: (snapshot: StateSnapshot) => void,
+  opts?: { onStepApplied?: (idx: number, step: OpStep, state: ReturnType<Renderer['getState']>) => void }
 ): PlaybackController => {
   let status: PlaybackState = 'idle';
   let speedMultiplier = 1;
@@ -38,6 +39,7 @@ export const createPlaybackController = (
       renderer.applyStep(steps[i], i);
       currentIndex = i;
       updateTimelineIndex(i);
+      opts?.onStepApplied?.(i, steps[i], renderer.getState());
       const delay = 200 / speedMultiplier;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -56,6 +58,7 @@ export const createPlaybackController = (
     renderer.applyStep(step, nextIdx);
     currentIndex = nextIdx;
     updateTimelineIndex(nextIdx);
+    opts?.onStepApplied?.(nextIdx, step, renderer.getState());
   };
 
   const doStepBack = () => {
@@ -69,6 +72,7 @@ export const createPlaybackController = (
       steps.slice(0, prevIdx + 1).forEach((s, idx) => renderer.applyStep(s, idx));
       currentIndex = prevIdx;
       updateTimelineIndex(prevIdx);
+      opts?.onStepApplied?.(prevIdx, steps[prevIdx], renderer.getState());
       return;
     }
     // fallback: replay from zero
@@ -76,6 +80,7 @@ export const createPlaybackController = (
     steps.slice(0, prevIdx + 1).forEach((s, idx) => renderer.applyStep(s, idx));
     currentIndex = prevIdx;
     updateTimelineIndex(prevIdx);
+    opts?.onStepApplied?.(prevIdx, steps[prevIdx], renderer.getState());
   };
 
   const doJumpTo = (index: number) => {
@@ -88,6 +93,7 @@ export const createPlaybackController = (
     steps.slice(0, clamped + 1).forEach((s, idx) => renderer.applyStep(s, idx));
     currentIndex = clamped;
     updateTimelineIndex(clamped);
+    if (steps[clamped]) opts?.onStepApplied?.(clamped, steps[clamped], renderer.getState());
   };
 
   const setSpeed = (multiplier: number) => {
