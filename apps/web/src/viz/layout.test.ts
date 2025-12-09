@@ -26,5 +26,6 @@ describe('layoutTree', () => {
     expect((state.nodes.get('l')?.y ?? 0) > rootY).toBe(true);
     expect((state.nodes.get('r')?.y ?? 0) > rootY).toBe(true);
     expect((state.nodes.get('l')?.x ?? 0) < (state.nodes.get('r')?.x ?? 0)).toBe(true);
+    expect(Math.abs((state.nodes.get('l')?.x ?? 0) - (state.nodes.get('r')?.x ?? 0))).toBeGreaterThan(0);
   });
 });

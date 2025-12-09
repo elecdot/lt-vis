@@ -22,9 +22,7 @@ export const buildLinearSnapshot = (structureId: ID, values: Value[]): StateSnap
   const nodes = values.map((value, idx) => ({
     id: `${structureId}:${idx}`,
     label: String(value),
-    value,
-    x: idx,
-    y: 0
+    value
   }));
 
   const edges = values

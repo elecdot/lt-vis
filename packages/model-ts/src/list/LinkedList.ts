@@ -38,7 +38,7 @@ export class LinkedList extends LinearBase {
           { type: 'CreateNode', node: snapshot.nodes[pos] },
           { type: 'Link', edge: { id: `${this.id}:${pos - 1}->${nodeId}:next`, src: `${this.id}:${pos - 1}`, dst: nodeId, label: 'next' } },
           { type: 'Link', edge: { id: `${nodeId}->${this.id}:${pos + 1}:next`, src: nodeId, dst: `${this.id}:${pos + 1}`, label: 'next' } },
-          { type: 'Move', id: nodeId, x: snapshot.nodes[pos].x ?? pos, y: snapshot.nodes[pos].y ?? 0 },
+          ...snapshot.nodes.map((n, idx) => ({ type: 'Move', id: n.id, x: idx, y: 0 } as VizEvent)),
           { type: 'Tip', text: `Inserted ${op.value} at ${pos}`, anchor: nodeId }
         ];
         steps.push({ explain: `Insert at ${pos}`, events, snapshot });
@@ -64,6 +64,7 @@ export class LinkedList extends LinearBase {
         const events: VizEvent[] = [
           { type: 'Unlink', id: `${this.id}:${pos - 1}->${removedId}:next`, src: `${this.id}:${pos - 1}`, dst: removedId },
           { type: 'RemoveNode', id: removedId },
+          ...snapshot.nodes.map((n, idx) => ({ type: 'Move', id: n.id, x: idx, y: 0 } as VizEvent)),
           { type: 'Tip', text: `Deleted index ${pos}`, anchor: snapshot.nodes[pos]?.id }
         ];
         steps.push({ explain: `Delete at ${pos}`, events, snapshot });

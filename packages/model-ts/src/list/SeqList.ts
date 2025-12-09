@@ -37,7 +37,7 @@ export class SeqList extends LinearBase {
         const nodeId = `${this.id}:${pos}`;
         const events: VizEvent[] = [
           { type: 'CreateNode', node: snapshot.nodes[pos] },
-          { type: 'Move', id: nodeId, x: snapshot.nodes[pos].x ?? pos, y: snapshot.nodes[pos].y ?? 0 },
+          { type: 'Move', id: nodeId, x: pos, y: 0 } as VizEvent,
           { type: 'Tip', text: `Inserted ${op.value} at ${pos}`, anchor: nodeId }
         ];
         steps.push({ explain: `Insert at ${pos}`, events, snapshot });
@@ -64,6 +64,7 @@ export class SeqList extends LinearBase {
           explain: `Delete at ${pos}`,
           events: [
             { type: 'RemoveNode', id: removedId },
+            ...snapshot.nodes.map((n, idx) => ({ type: 'Move', id: n.id, x: idx, y: 0 } as VizEvent)),
             { type: 'Tip', text: `Deleted index ${pos}`, anchor: snapshot.nodes[pos]?.id }
           ],
           snapshot

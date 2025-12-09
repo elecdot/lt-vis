@@ -30,9 +30,20 @@ describe('viz engine', () => {
       }
     ];
     applySteps(state, steps);
-    expect(state.nodes.get('a')?.x).toBeDefined();
+    expect(typeof state.nodes.get('a')?.x).toBe('number');
     expect(state.meta.stepIndex).toBe(1);
     expect(state.meta.explain).toBe('step2');
+  });
+
+  it('applyStep ignores snapshot coords and relayouts', () => {
+    const state = createEmptyViewState();
+    const steps: OpStep[] = [
+      { events: [{ type: 'CreateNode', node: { id: 'a', label: 'A', x: 999, y: 999 } }], snapshot: { nodes: [{ id: 'a', label: 'A', x: 999, y: 999 }], edges: [] } },
+      { events: [{ type: 'CreateNode', node: { id: 'b', label: 'B', x: -999, y: -999 } }], snapshot: { nodes: [{ id: 'a', label: 'A', x: 999, y: 999 }, { id: 'b', label: 'B', x: -999, y: -999 }], edges: [] } }
+    ];
+    applySteps(state, steps);
+    expect(Math.abs(state.nodes.get('a')?.x ?? 0)).toBeLessThan(1000);
+    expect(Math.abs(state.nodes.get('b')?.x ?? 0)).toBeLessThan(1000);
   });
 
   it('renderer play applies all steps', async () => {

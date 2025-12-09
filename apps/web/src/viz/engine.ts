@@ -27,10 +27,10 @@ const autoLayout = (state: ViewState, smooth = true): void => {
   laidOut.nodes.forEach((node, id) => {
     if (node.pinned) return;
     const prev = prevPositions.get(id);
-    if (smooth && prev && prev.x !== undefined && prev.y !== undefined) {
-      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-      const x = node.x !== undefined && prev.x !== undefined ? lerp(prev.x, node.x, 0.7) : node.x;
-      const y = node.y !== undefined && prev.y !== undefined ? lerp(prev.y, node.y, 0.7) : node.y;
+    if (smooth && prev && prev.x !== undefined && prev.y !== undefined && node.x !== undefined && node.y !== undefined) {
+      // tween half-way toward target to avoid snapping; UI loop can re-render state for visible motion
+      const x = prev.x + (node.x - prev.x) * 0.5;
+      const y = prev.y + (node.y - prev.y) * 0.5;
       laidOut.nodes.set(id, { ...node, x, y });
     } else {
       laidOut.nodes.set(id, { ...node });

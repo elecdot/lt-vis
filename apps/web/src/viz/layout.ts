@@ -40,28 +40,34 @@ export const layoutTree = (state: ViewState, options?: TreeLayoutOptions): ViewS
   const childIds = new Set(Array.from(state.edges.values()).map((e) => e.dst));
   const roots = Array.from(state.nodes.keys()).filter((id) => !childIds.has(id));
 
+  const subtreeWidth = (nodeId: string): number => {
+    const [left, right] = children.get(nodeId) ?? [];
+    const leftWidth = left ? subtreeWidth(left) : 1;
+    const rightWidth = right ? subtreeWidth(right) : 1;
+    return leftWidth + rightWidth;
+  };
+
+  const assignPositions = (nodeId: string, depth: number, offset: number) => {
+    const node = state.nodes.get(nodeId);
+    if (node && !node.pinned) {
+      state.nodes.set(nodeId, { ...node, x: offset, y: depth * layerGap });
+    }
+    const childList = children.get(nodeId) ?? [];
+    if (childList.length === 0) return;
+    const [left, right] = childList;
+    if (left) {
+      const rightWidth = right ? subtreeWidth(right) : 0;
+      assignPositions(left, depth + 1, offset - (rightWidth + 1) * siblingGap * 0.5);
+    }
+    if (right) {
+      const leftWidth = left ? subtreeWidth(left) : 0;
+      assignPositions(right, depth + 1, offset + (leftWidth + 1) * siblingGap * 0.5);
+    }
+  };
+
   roots.forEach((rootId, rootIdx) => {
-    assignPositions(state, rootId, 0, rootIdx * siblingGap, layerGap, siblingGap, children);
+    assignPositions(rootId, 0, rootIdx * siblingGap * 2);
   });
 
   return state;
-};
-
-const assignPositions = (
-  state: ViewState,
-  nodeId: string,
-  depth: number,
-  offset: number,
-  layerGap: number,
-  siblingGap: number,
-  children: Map<string, string[]>
-) => {
-  const node = state.nodes.get(nodeId);
-  if (node && !node.pinned) {
-    state.nodes.set(nodeId, { ...node, x: offset, y: depth * layerGap });
-  }
-  const childList = children.get(nodeId) ?? [];
-  childList.forEach((childId, idx) => {
-    assignPositions(state, childId, depth + 1, offset + (idx - (childList.length - 1) / 2) * siblingGap, layerGap, siblingGap, children);
-  });
 };
