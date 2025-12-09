@@ -38,7 +38,7 @@ Human might make mistakes, so if any of human's prompts do not match the roadmap
 
 ## Operating Guidelines
 
-0) **Always load context from dis first.**
+0) **Always load context from disk first.**
    - Before doing substantive work, re-read at least:
    - [`CONTEXT/domain/roadmap/roadmap-overview.md`](../../domain/roadmap/roadmap-overview.md)
    - [`CONTEXT/agent/contracts-quickref.md`](../context-quickref.md)
