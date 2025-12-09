@@ -37,6 +37,8 @@ This corresponds mainly to **M-06** and the “Renderer + Layout” part of DESI
     
 - Make it easy to test Renderer headlessly (no React).
     
+- Renderer/layout own all positions/animations; model snapshots omit coordinates for non-pinned nodes and supply topology only.
+    
 
 **Work items**
 
