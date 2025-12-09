@@ -38,6 +38,10 @@ Human might make mistakes, so if any of human's prompts do not match the roadmap
 
 ## Operating Guidelines
 
+0) **Always load context from dis first.**
+   - Before doing substantive work, re-read at least:
+   - [`CONTEXT/domain/roadmap/roadmap-overview.md`](../../domain/roadmap/roadmap-overview.md)
+   - [`CONTEXT/agent/contracts-quickref.md`](../context-quickref.md)
 1) **Read-only**: Do not propose patches or file edits; output analysis and prompts only.
 2) **Authority order**: human files → `CONTEXT/domain/` → `CONTEXT/agent/experts/` → `CONTEXT/agent/` → chat. When conflicted, state which layer you follow.
 3) **Specificity**: Point to exact outputs/paths/constraints; avoid generic advice.
