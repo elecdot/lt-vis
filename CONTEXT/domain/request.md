@@ -181,6 +181,12 @@ C-14 Themes/export images/videos/GIFs — UX polish & export toolchain
 * Portability: prioritize Web (React + Vite) with optional Tauri packaging for desktop.
 * Reliability: implement autosave (every 30s or 5s after an operation) and prompt for recovery after restart.
 
+## 5.4 Model ↔ Renderer separation (enforced contract)
+- Model emits topology-only snapshots (ids, values/labels, props, edges, meta) and logical OpSteps (Highlight/Compare/Link/Unlink/Create/Remove/Tip/Rotate/Rebalance/Error) with per-step snapshots; do **not** include positions for non-pinned nodes.
+- Renderer/layout owns positions/animations: recompute layout per step from topology; animate transitions internally; UI renders renderer state only.
+- Operations must Create structures before other ops; timeline/playback must consume all OpSteps in order, using per-step snapshots for stepBack.
+- Errors must not advance visible state; keep prior view intact on error OpSteps.
+
 ---
 
 # 6. Use Case Diagram

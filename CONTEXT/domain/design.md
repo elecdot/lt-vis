@@ -75,6 +75,11 @@ Default event execution order: Highlight/Compare â†’ Create/Remove/Link/Unlink â
 ID convention: structure ids are stable tokens (e.g., `BST1`, `ListA`); node ids include the structure prefix `<StructId>:n<index|key>`, edge ids `<src>-><dst>[:<label>]`. DSL `target` resolves to structure ids only.
 Suggested aliases (shared types): `type StructureID = string; type NodeID = ID;` to reduce misuse between structure ids and node ids.
 
+Separation contract (visual vs. model responsibilities)
+- Model snapshots are topology-only (ids/values/props/edges/meta), no positions for non-pinned nodes; OpSteps remain logical (Highlight/Compare/Link/Unlink/Create/Remove/Tip/Rotate/Rebalance/Error) with per-step snapshots/errors.
+- Renderer/layout recompute positions from topology on each step and handle animations internally; UI reads renderer state only.
+- Require a Create op before other ops for a structure; timeline/playback must consume all OpSteps with per-step snapshots for stepBack; errors must not advance visible state.
+
 ---
 
 ## 3. Component view (Mermaid components)
