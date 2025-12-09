@@ -8,7 +8,7 @@ describe('layoutLinear', () => {
     applyEvent(state, { type: 'CreateNode', node: { id: 'a', label: 'A', props: { index: 1 } } });
     applyEvent(state, { type: 'CreateNode', node: { id: 'b', label: 'B', props: { index: 0 }, pinned: true, x: 999, y: 999 } });
     layoutLinear(state, { direction: 'horizontal', nodeSpacing: 50 });
-    expect(state.nodes.get('a')?.x).toBe(50);
+    expect(state.nodes.get('a')?.x).toBe(25);
     expect(state.nodes.get('b')?.x).toBe(999);
   });
 });

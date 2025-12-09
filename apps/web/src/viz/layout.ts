@@ -11,16 +11,17 @@ interface TreeLayoutOptions {
 }
 
 export const layoutLinear = (state: ViewState, options?: LinearLayoutOptions): ViewState => {
-  const spacing = options?.nodeSpacing ?? 120;
+  const spacing = options?.nodeSpacing ?? 150;
   const vertical = options?.direction === 'vertical';
   const ordered = Array.from(state.nodes.values()).sort((a, b) => {
     const ai = typeof a.props?.index === 'number' ? (a.props.index as number) : parseInt(a.id.split(':').pop() ?? '0', 10);
     const bi = typeof b.props?.index === 'number' ? (b.props.index as number) : parseInt(b.id.split(':').pop() ?? '0', 10);
     return ai - bi;
   });
+  const offset = ((ordered.length - 1) * spacing) / 2;
   ordered.forEach((node, idx) => {
     if (node.pinned) return;
-    const x = vertical ? 0 : idx * spacing;
+    const x = vertical ? 0 : idx * spacing - offset;
     const y = vertical ? idx * spacing : 0;
     state.nodes.set(node.id, { ...node, x, y });
   });
@@ -28,8 +29,8 @@ export const layoutLinear = (state: ViewState, options?: LinearLayoutOptions): V
 };
 
 export const layoutTree = (state: ViewState, options?: TreeLayoutOptions): ViewState => {
-  const layerGap = options?.layerGap ?? 160;
-  const siblingGap = options?.siblingGap ?? 140;
+  const layerGap = options?.layerGap ?? 200;
+  const siblingGap = options?.siblingGap ?? 160;
 
   // Build adjacency to find roots
   const children = new Map<string, string[]>();

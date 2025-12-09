@@ -18,12 +18,14 @@ export interface ViewState {
 
 export interface PlaybackOptions {
   delayMs?: number;
+  smooth?: boolean;
+  durationMs?: number;
 }
 
 export interface Renderer {
   getState(): ViewState;
   reset(snapshot?: StateSnapshot): void;
   applyEvent(event: VizEvent): void;
-  applyStep(step: OpStep, idx?: number): void;
+  applyStep(step: OpStep, idx?: number, options?: { autoLayout?: boolean; smooth?: boolean }): void;
   play(steps: OpStep[], options?: PlaybackOptions): Promise<void>;
 }

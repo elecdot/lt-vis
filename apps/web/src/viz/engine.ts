@@ -1,5 +1,6 @@
 import type { ID, OpStep, StateSnapshot, VizEvent } from '@ltvis/shared';
 import type { EdgeViewState, NodeViewState, PlaybackOptions, Renderer, ViewState } from './types';
+import { layoutLinear, layoutTree } from './layout';
 
 export const createEmptyViewState = (): ViewState => ({
   nodes: new Map(),
@@ -15,6 +16,26 @@ const cloneState = (snapshot?: StateSnapshot): ViewState => {
   view.meta.selection = snapshot.meta?.selection ?? null;
   view.meta.stepIndex = snapshot.meta?.step;
   return view;
+};
+
+const hasTreeEdges = (state: ViewState) => Array.from(state.edges.values()).some((e) => e.label === 'L' || e.label === 'R');
+
+const autoLayout = (state: ViewState, smooth = true): void => {
+  const prevPositions = new Map<string, { x?: number; y?: number }>();
+  state.nodes.forEach((n) => prevPositions.set(n.id, { x: n.x, y: n.y }));
+  const laidOut = hasTreeEdges(state) ? layoutTree(state) : layoutLinear(state);
+  laidOut.nodes.forEach((node, id) => {
+    if (node.pinned) return;
+    const prev = prevPositions.get(id);
+    if (smooth && prev && prev.x !== undefined && prev.y !== undefined) {
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      const x = node.x !== undefined && prev.x !== undefined ? lerp(prev.x, node.x, 0.7) : node.x;
+      const y = node.y !== undefined && prev.y !== undefined ? lerp(prev.y, node.y, 0.7) : node.y;
+      laidOut.nodes.set(id, { ...node, x, y });
+    } else {
+      laidOut.nodes.set(id, { ...node });
+    }
+  });
 };
 
 export const applyEvent = (state: ViewState, event: VizEvent): void => {
@@ -94,7 +115,7 @@ export const applyEvent = (state: ViewState, event: VizEvent): void => {
   }
 };
 
-export const applyStep = (state: ViewState, step: OpStep, idx = 0): void => {
+export const applyStep = (state: ViewState, step: OpStep, idx = 0, options?: { autoLayout?: boolean; smooth?: boolean }): void => {
   step.events.forEach((evt) => applyEvent(state, evt));
   if (step.snapshot) {
     state.meta.selection = step.snapshot.meta?.selection ?? state.meta.selection ?? null;
@@ -104,10 +125,13 @@ export const applyStep = (state: ViewState, step: OpStep, idx = 0): void => {
   if (step.explain && !state.meta.currentTip) {
     state.meta.currentTip = step.explain;
   }
+  if (options?.autoLayout !== false) {
+    autoLayout(state, options?.smooth ?? true);
+  }
 };
 
 export const applySteps = (state: ViewState, steps: OpStep[]): void => {
-  steps.forEach((step, idx) => applyStep(state, step, idx));
+  steps.forEach((step, idx) => applyStep(state, step, idx, { autoLayout: true }));
 };
 
 class RendererImpl implements Renderer {
@@ -125,14 +149,14 @@ class RendererImpl implements Renderer {
     applyEvent(this.state, event);
   }
 
-  applyStep(step: OpStep, idx?: number): void {
-    applyStep(this.state, step, idx);
+  applyStep(step: OpStep, idx?: number, options?: { autoLayout?: boolean; smooth?: boolean }): void {
+    applyStep(this.state, step, idx, options);
   }
 
   async play(steps: OpStep[], options?: PlaybackOptions): Promise<void> {
     const delay = options?.delayMs ?? 0;
     for (let i = 0; i < steps.length; i++) {
-      this.applyStep(steps[i], i);
+      this.applyStep(steps[i], i, { autoLayout: true, smooth: options?.smooth ?? true });
       if (delay > 0) {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
