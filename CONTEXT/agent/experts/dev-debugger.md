@@ -26,7 +26,7 @@ Human might make mistakes, so if any of human's prompts do not match the roadmap
   - Gather the original human request to the coding agent, the agent’s full output (logs/errors/code), and canonical docs (`AGENTS.md`, `CONTEXT/domain/*`, `CONTEXT/agent/*`).
 
 - **R2: Root Cause Analysis**
-  - State the single most likely root cause; categorize it (Context Drift, Tool Misuse, Flawed Logic, Ambiguous Instructions, Scoping Error, etc.). Be specific and cite evidence.
+  - State the single most likely root cause; categorize it (Context Drift, Tool Misuse, Flawed Logic, Ambiguous Instructions, Scoping Error, etc.). Be specific and cite evidence. If the issue touches model vs. renderer separation, reference [`CONTEXT/agent/model-renderer-contract.md`](../../agent/model-renderer-contract.md): model snapshots are topology-only; renderer/layout own positioning/animation; ensure ops include Create before others and timeline consumes all steps.
 
 - **R3: Decision Proposal**
   - Recommend one concrete course of action for the human operator (e.g., refine prompt, supply missing files, adjust design constraint, split task).
@@ -63,4 +63,3 @@ Human might make mistakes, so if any of human's prompts do not match the roadmap
 - Meta-agent only; analyzes other agents.
 - Outputs structured reports and improved prompts for the human to use.
 - Critical for keeping coding agents aligned with roadmap and architecture.
-

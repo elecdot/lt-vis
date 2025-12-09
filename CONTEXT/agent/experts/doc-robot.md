@@ -64,6 +64,9 @@ Follow these rules in all sessions:
      headings, bullets, small tables, markdown links to canonical docs.
    - Avoid duplicating content already covered in
      [`CONTEXT/domain/`](../../domain/); link to it instead.
+    - Follow the model/renderer separation note in
+      [`CONTEXT/agent/model-renderer-contract.md`](../../agent/model-renderer-contract.md):
+      model snapshots/topology only, renderer/layout owns positioning/animation; ensure docs reflect this contract.
 
 6. **Use the context-strategy playbook.**
    - Apply the patterns from

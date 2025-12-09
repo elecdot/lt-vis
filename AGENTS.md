@@ -307,6 +307,8 @@ participate safely.
   [`CONTEXT/agent/context-strategy.md`](./CONTEXT/agent/context-strategy.md)
   as the primary references for project intent, agent behavior, and
   context-handling rules.
+- **Model/renderer separation**: See [`CONTEXT/agent/model-renderer-contract.md`](./CONTEXT/agent/model-renderer-contract.md) — model snapshots are topology-only (no x/y); renderer/layout recompute positions/animations per step; operations must Create before other ops; timeline/playback must consume all OpSteps.
+- **Project lessons**: High-level restart/onboarding guidance is in [`CONTEXT/agent/project-lessons.md`](./CONTEXT/agent/project-lessons.md); review it when planning or refactoring.
 - **Contracts quickref**: Use [`CONTEXT/agent/contracts-quickref.md`](./CONTEXT/agent/contracts-quickref.md) for mandatory type/contract/dependency reminders before patching.
 - **Retrieval-first**: Before relying on chat history, re-read the
   relevant files from `CONTEXT/` and this handbook to rebuild your
